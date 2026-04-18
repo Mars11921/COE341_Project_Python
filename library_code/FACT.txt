@@ -1,0 +1,44 @@
+Below is the source code for the FACT function, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+Function: Takes the factorial of the input in AC.
+	  Output is returned in AC
+Code:
+FACT:	HEX 0		/Return Address
+	STA FVALUE	/Save the value of AC to FVALUE
+	CMA
+	INC
+	STA FCTR	/Use a negative version of FVALUE as our counter
+	LDA ONE
+	STA FFINAL	/Initialize the final value to 1
+
+F_LOOP:	LDA FVALUE
+	STA FNC_IN	/Load FNC_IN with FVALUE
+	LDA FFINAL	/Load AC with FFINAL
+	BSA MUL_SW	/Multiply FFINAL and FVALUE
+	STA FFINAL	/Update FFINAL with the result
+	LDA FVALUE
+	ADD NEGONE	/Decrement FVALUE
+	STA FVALUE
+	ISZ FCTR
+	BUN F_LOOP
+	
+	LDA FFINAL	/Load the final result of the factorial
+	BUN FACT I	/Return
+
+
+
+/------Local Variables------
+FCTR:	DEC 0	/Counter for the FACT function
+FFINAL:	HEX 0	/To contain the final value for the factorial to be returned
+FVALUE:	HEX 0	/Value to be factorial (AC)
+
+
+
+/------Constants------
+ONE:	DEC 1
+NEGONE:	DEC -1
+
+
+
+/------Inputs------
+FNC_IN:	HEX 0	/The input to the functions used by the library

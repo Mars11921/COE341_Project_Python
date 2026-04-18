@@ -7,7 +7,7 @@ MUL_SW:	HEX 0	/Where return address will be saved when function is called
 	CLA
 	STA PRODUC	/Initialize the output to zero
 	LDA CTR_16
-	STA CTR		/Initialize the multiplication counter to -16
+	STA MCTR	/Initialize the multiplication counter to -16
 
 M_LOOP:	CLE
 	LDA MULT2
@@ -25,7 +25,7 @@ M_NEXT:	CLE		/Were preparing for a shift not a cil
 	LDA MULT1
 	CIL		/Weigh MULT1 more for the next pass
 	STA MULT1
-	ISZ CTR
+	ISZ MCTR
 	BUN M_LOOP
 
 	LDA PRODUC	/When the multiplication is done, load the product into AC
@@ -58,18 +58,49 @@ D_DONE:	LDA QUOT	/Load the quotient to AC when done
 
 
 
+/------FACT Function------
+FACT:	HEX 0		/Return Address
+	STA FVALUE	/Save the value of AC to FVALUE
+	CMA
+	INC
+	STA FCTR	/Use a negative version of FVALUE as our counter
+	LDA ONE
+	STA FFINAL	/Initialize the final value to 1
+
+F_LOOP:	LDA FVALUE
+	STA FNC_IN	/Load FNC_IN with FVALUE
+	LDA FFINAL	/Load AC with FFINAL
+	BSA MUL_SW	/Multiply FFINAL and FVALUE
+	STA FFINAL	/Update FFINAL with the result
+	LDA FVALUE
+	ADD NEGONE	/Decrement FVALUE
+	STA FVALUE
+	ISZ FCTR
+	BUN F_LOOP
+	
+	LDA FFINAL	/Load the final result of the factorial
+	BUN FACT I	/Return
+
+
+
+
 /------Local Variables------
-CTR:	DEC 0	/Generic Counter Variable
+MCTR:	DEC 0	/Counter for the MUL_SW function
 PRODUC:	HEX 0	/The returned value for the MUL_SW function to be loaded to AC
 MULT1:	HEX 0	/First Value to be multiplied (AC)
 MULT2:	HEX 0	/Second Value to be multiplied (Input from FNC_IN)
 QUOT:	HEX 0	/Quotient, returned value for DIV_SW
 DIV1:	HEX 0	/Dividend (AC)
 DIV2:	HEX 0	/Negative version of Divisor to allow for subtraction (FNC_IN)
+FCTR:	DEC 0	/Counter for the FACT function
+FFINAL:	HEX 0	/To contain the final value for the factorial to be returned
+FVALUE:	HEX 0	/Value to be factorial (AC)
 
 
 /------Constants------
 CTR_16:	DEC -16
+ONE:	DEC 1
+NEGONE:	DEC -1
 
 
 
