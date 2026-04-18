@@ -13,9 +13,11 @@ if __name__ == "__main__":
     print("\n***************************************")
     print("*** COE 341: MANO SIMULATOR PROJECT ***")
     print("***************************************")
-    print("Made by: Amira Azim, Farah Tawalbeh, Mariam Moghazi, Dana Khalil")
+    print("Original Simulator Made by: Amira Azim, Farah Tawalbeh, Mariam Moghazi, Dana Khalil")
+    print("Spring 2026 Appendum For The COE 341 Project Done By: Hasan Morobeid, x, x, x")
     print("Instructor: Dr. Ihab Amer")
-    print("Fall 2025")
+    print("Original Program: Fall 2025")
+    print("Spring 2026")
     print("--------------------------------------\n")
     
     # CONFIGURATION AND INITIALIZATION

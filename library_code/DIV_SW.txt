@@ -1,0 +1,38 @@
+Below is the source code for the DIV_SW function, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+Function: Divides the value in AC by the value stored at FNC_IN.
+	  Output is returned in AC
+Code:
+DIV_SW:	HEX 0		/Return address
+	STA DIV1	/Store AC as the Dividend
+	LDA FNC_IN	/FNC_IN is our divisor
+	CMA
+	INC
+	STA DIV2	/Perform 2s compliment to obtain negative divisor
+	CLA
+	STA QUOT	/Initialize quotient to 0
+
+D_LOOP:	LDA DIV1
+	ADD DIV2	/Subtract divisor from dividend
+	SPA		/Check if were still positive
+	BUN D_DONE	/If were not, then the division is over
+	STA DIV1	/Update dividend
+	ISZ QUOT	/Increment quotient
+	BUN D_LOOP
+
+D_DONE:	LDA QUOT	/Load the quotient to AC when done
+	BUN DIV_SW I	/Return
+
+
+
+
+/------Local Variables------
+QUOT:	HEX 0	/Quotient, returned value for DIV_SW
+DIV1:	HEX 0	/Dividend (AC)
+DIV2:	HEX 0	/Negative version of Divisor to allow for subtraction (FNC_IN)
+
+
+
+
+/------Inputs------
+FNC_IN:	HEX 0	/The input to the functions used by the library
