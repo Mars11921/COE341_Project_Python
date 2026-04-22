@@ -84,6 +84,54 @@ F_LOOP:	LDA FVALUE
 
 
 
+/------FIBB Function------
+FIBB:	HEX 0		/Return Address
+	CMA
+	INC
+	INC		/Increment twice cause the function starts one later than usual
+	STA FIBCTR	/The value in AC will be used to count the iterations through the sequence
+	LDA ONE
+	STA FIBONE	/Initialize FIBONE with 1
+	LDA ZERO
+	STA FIBTWO	/Initialize FIBTWO with 0
+
+FIBB_L:	LDA FIBONE
+	ADD FIBTWO	/F(n) = F(n-1) + F(n-2)
+	STA FIBVAL
+	LDA FIBONE
+	STA FIBTWO	/Update F(n-2) to be F(n-1)
+	LDA FIBVAL
+	STA FIBONE	/Update F(n-1) to be F(n)
+	ISZ FIBCTR
+	BUN FIBB_L
+
+	LDA FIBVAL	/Load the value of the sequence
+	BUN FIBB I	/Return
+
+
+
+
+/------EXP16 Function------
+EXP16:	HEX 0		/Return Address
+	STA BASE16	/Store AC to be our base
+	LDA FNC_IN
+	CMA
+	INC
+	STA EXPO16	/Store the negative value in FNC_IN as our exponent for counting
+
+E16_L:	LDA BASE16
+	STA FNC_IN	/Store our base as our input to the multiplication
+	LDA OUT16
+	BSA MUL_SW	/Multiply our running total with out base
+	STA OUT16
+	ISZ EXPO16
+	BUN E16_L
+
+	LDA OUT16
+	BUN EXP16 I	/Return
+
+
+
 /------Local Variables------
 MCTR:	DEC 0	/Counter for the MUL_SW function
 PRODUC:	HEX 0	/The returned value for the MUL_SW function to be loaded to AC
@@ -95,12 +143,22 @@ DIV2:	HEX 0	/Negative version of Divisor to allow for subtraction (FNC_IN)
 FCTR:	DEC 0	/Counter for the FACT function
 FFINAL:	HEX 0	/To contain the final value for the factorial to be returned
 FVALUE:	HEX 0	/Value to be factorial (AC)
+FIBCTR:	DEC 0	/Counter for Fibonacci sequence (from AC)
+FIBVAL:	HEX 0	/Current value of the Fibonacci sequence
+FIBONE:	DEC 0	/F(n-1)
+FIBTWO:	DEC 0	/F(n-2)
+BASE16:	HEX 0	/Base for 16 bit exponentiation (from AC)
+EXPO16:	HEX 0	/Exponent for 16 bit exponentiation (from FNC_IN)
+OUT16:	HEX 1	/Output for EXP16
+
+
 
 
 /------Constants------
 CTR_16:	DEC -16
 ONE:	DEC 1
 NEGONE:	DEC -1
+ZERO:	DEC 0
 
 
 

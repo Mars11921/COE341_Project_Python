@@ -1,0 +1,43 @@
+Below is the source code for the DIV_SW function, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+Function: Returns the value of the Fibonacci sequence up to the value stored in AC
+	  Output is returned in AC
+Code:
+FIBB:	HEX 0		/Return Address
+	CMA
+	INC
+	INC		/Increment twice cause the function starts one later than usual
+	STA FIBCTR	/The value in AC will be used to count the iterations through the sequence
+	LDA ONE
+	STA FIBONE	/Initialize FIBONE with 1
+	LDA ZERO
+	STA FIBTWO	/Initialize FIBTWO with 0
+
+FIBB_L:	LDA FIBONE
+	ADD FIBTWO	/F(n) = F(n-1) + F(n-2)
+	STA FIBVAL
+	LDA FIBONE
+	STA FIBTWO	/Update F(n-2) to be F(n-1)
+	LDA FIBVAL
+	STA FIBONE	/Update F(n-1) to be F(n)
+	ISZ FIBCTR
+	BUN FIBB_L
+
+	LDA FIBVAL	/Load the value of the sequence
+	BUN FIBB I	/Return
+
+
+
+
+
+/------Local Variables------
+FIBCTR:	DEC 0	/Counter for Fibonacci sequence (from AC)
+FIBVAL:	HEX 0	/Current value of the Fibonacci sequence
+FIBONE:	DEC 0	/F(n-1)
+FIBTWO:	DEC 0	/F(n-2)
+
+
+
+/------Constants------
+ONE:	DEC 1
+ZERO:	DEC 0

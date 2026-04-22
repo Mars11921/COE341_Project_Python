@@ -1,0 +1,24 @@
+Below is the source code for the EXP16 function, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+Function: Calculates AC^FNC_IN
+	  Output is returned in AC and is 16 bit max.
+
+Requirements: Requires the MUL_SW Function to run
+Code:
+EXP16:	HEX 0		/Return Address
+	STA BASE16	/Store AC to be our base
+	LDA FNC_IN
+	CMA
+	INC
+	STA EXPO16	/Store the negative value in FNC_IN as our exponent for counting
+
+E16_L:	LDA BASE16
+	STA FNC_IN	/Store our base as our input to the multiplication
+	LDA OUT16
+	BSA MUL_SW	/Multiply our running total with out base
+	STA OUT16
+	ISZ EXPO16
+	BUN E16_L
+
+	LDA OUT16
+	BUN EXP16 I	/Return
