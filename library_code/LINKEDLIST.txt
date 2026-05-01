@@ -1,0 +1,114 @@
+Below is the source code for the Linked list functions, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+/------Linked List Insert------
+/Inserts the value in AC to the end of the LL
+INSERT:	HEX 0
+	STA LLTAIL I	/Store the AC into the last node
+	LDA LLTAIL	/Load the pointer to the last node
+	INC
+	INC
+	STA LLNEXT	/Store the ghost node after it in next
+	ISZ LLTAIL	/Increment the pointer to the node
+	LDA LLNEXT	
+	STA LLTAIL I	/Make it point to our next ghost node
+	ISZ LLTAIL	/Make the tail point to the next empty space in the list
+	
+	BUN INSERT I	/Return
+
+
+
+/------Linked List Traverse------
+/Traverses to the index (starting from 1) stored in AC and returns the item at that index to AC
+TRVRSE:	HEX 0
+	CMA
+	INC		/Store the value of the Xth element in the list to traverse to 
+	STA TRCTR	/as a counter (negative)
+	LDA LLHEAD	/Load the head of the LL and store it in our pointer (LLNEXT)
+	STA LLNEXT	
+
+TRLOOP:	LDA LLNEXT I	/Read the value of our pointer
+	ISZ TRCTR	/If were at the index we want return
+	BUN TLOGIC
+	BUN TRDONE
+
+TLOGIC:	ISZ LLNEXT	/If not, look at the nodes pointer
+	LDA LLNEXT I	
+	SZA		/If were pointing to 0 (null) skip to return
+	BUN TROK	/If not continue its OK
+	BUN TRDONE	/Return a 0 if index out of bounds
+TROK:	STA LLNEXT	/Make our pointer point to the next node
+	BUN TRLOOP
+	
+TRDONE:	BUN TRVRSE I
+
+
+
+
+/------Linked List Delete------
+/Deletes the node at the index specified, does nothing if index is out of bounds 
+LLDELT:	HEX 0
+	ADD NEGONE	/Subtract 1 from the AC just to check if were deleting the head
+	SZA
+	BUN NOHEAD	/Delete a body node
+	BUN BYHEAD	/Handle deleting the head
+
+BYHEAD:	LDA LLHEAD	/Logic for deleting the head
+	INC
+	STA LLNEXT
+	LDA LLNEXT I
+	STA LLHEAD	/The pointer to the first node after the head is now the new head
+	BUN LLDELT I	/Return
+
+NOHEAD:	CMA
+	INC		/Store the counter to the X-1th element in the list to traverse to 
+	STA DLCTR	/as a counter (negative)
+	LDA LLHEAD	/Load the head of the LL and store it in our pointer (LLNEXT)
+	STA LLNEXT	
+	
+LOOPDL:	ISZ DLCTR	/If were at the index we want start deleting
+	BUN NODLTE
+
+	LDA LLNEXT
+	STA DLPTR	/Use a second pointer to assist
+	ISZ DLPTR	/point to node->next
+	LDA DLPTR I
+	SZA		/Check if what were deleting is null
+	BUN FINALD	
+	BUN DLDONE
+
+FINALD:	STA DLPTR	/Now were pointing to the node to be deleted
+	ISZ DLPTR
+	LDA DLPTR I	/Check what were going to point to
+	ISZ LLNEXT
+	STA LLNEXT I	/Point the previous node to what the deleted node pointed to
+	BUN DLDONE
+	
+NODLTE:	ISZ LLNEXT	/If not look at the nodes pointer
+	LDA LLNEXT I
+	SZA		/If pointing to null just return
+	BUN DLOK	/If not continue
+	BUN DLDONE
+DLOK:	STA LLNEXT	/Point to the next node
+	BUN LOOPDL
+
+DLDONE:	BUN LLDELT I
+
+
+
+/------Local Variables------
+NEGONE:	DEC -1
+LLTAIL:	HEX B00	/Pointer to the tail of the LL
+LLNEXT:	HEX 0	/Temporary Area to store stuff for the LL
+TRCTR:	HEX 0
+DLCTR:	HEX 0
+DLPTR:	HEX 0	/Second pointer to assist in deletion
+
+
+
+/------Constants------
+LLHEAD:	HEX B00	/Pointer to the head of the linked list
+
+
+
+/------Linked List Memory Space------
+	ORG B00

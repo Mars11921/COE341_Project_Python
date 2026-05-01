@@ -1,4 +1,5 @@
 	ORG 900		/Ctrl-A Ctrl-V this to the end of your programs to include the library, make sure to read each functions txt file for its documentation.
+/ORG B00 is the starting address of the linked list data structure
 /------MUL_SW Function------
 MUL_SW:	HEX 0	/Where return address will be saved when function is called
 	STA MULT1	/Store AC as the first value
@@ -132,6 +133,100 @@ E16_L:	LDA BASE16
 
 
 
+
+/------Linked List Insert------
+INSERT:	HEX 0
+	STA LLTAIL I	/Store the AC into the last node
+	LDA LLTAIL	/Load the pointer to the last node
+	INC
+	INC
+	STA LLNEXT	/Store the ghost node after it in next
+	ISZ LLTAIL	/Increment the pointer to the node
+	LDA LLNEXT	
+	STA LLTAIL I	/Make it point to our next ghost node
+	ISZ LLTAIL	/Make the tail point to the next empty space in the list
+	
+	BUN INSERT I	/Return
+
+
+
+
+/------Linked List Traverse------
+TRVRSE:	HEX 0
+	CMA
+	INC		/Store the value of the Xth element in the list to traverse to 
+	STA TRCTR	/as a counter (negative)
+	LDA LLHEAD	/Load the head of the LL and store it in our pointer (LLNEXT)
+	STA LLNEXT	
+
+TRLOOP:	LDA LLNEXT I	/Read the value of our pointer
+	ISZ TRCTR	/If were at the index we want return
+	BUN TLOGIC
+	BUN TRDONE
+
+TLOGIC:	ISZ LLNEXT	/If not, look at the nodes pointer
+	LDA LLNEXT I	
+	SZA		/If were pointing to 0 (null) skip to return
+	BUN TROK	/If not continue its OK
+	BUN TRDONE	/Return a 0 if index out of bounds
+TROK:	STA LLNEXT	/Make our pointer point to the next node
+	BUN TRLOOP
+	
+TRDONE:	BUN TRVRSE I
+
+
+
+
+/------Linked List Delete------
+LLDELT:	HEX 0
+	ADD NEGONE	/Subtract 1 from the AC just to check if were deleting the head
+	SZA
+	BUN NOHEAD	/Delete a body node
+	BUN BYHEAD	/Handle deleting the head
+
+BYHEAD:	LDA LLHEAD	/Logic for deleting the head
+	INC
+	STA LLNEXT
+	LDA LLNEXT I
+	STA LLHEAD	/The pointer to the first node after the head is now the new head
+	BUN LLDELT I	/Return
+
+NOHEAD:	CMA
+	INC		/Store the counter to the X-1th element in the list to traverse to 
+	STA DLCTR	/as a counter (negative)
+	LDA LLHEAD	/Load the head of the LL and store it in our pointer (LLNEXT)
+	STA LLNEXT	
+	
+LOOPDL:	ISZ DLCTR	/If were at the index we want start deleting
+	BUN NODLTE
+
+	LDA LLNEXT
+	STA DLPTR	/Use a second pointer to assist
+	ISZ DLPTR	/point to node->next
+	LDA DLPTR I
+	SZA		/Check if what were deleting is null
+	BUN FINALD	
+	BUN DLDONE
+
+FINALD:	STA DLPTR	/Now were pointing to the node to be deleted
+	ISZ DLPTR
+	LDA DLPTR I	/Check what were going to point to
+	ISZ LLNEXT
+	STA LLNEXT I	/Point the previous node to what the deleted node pointed to
+	BUN DLDONE
+	
+NODLTE:	ISZ LLNEXT	/If not look at the nodes pointer
+	LDA LLNEXT I
+	SZA		/If pointing to null just return
+	BUN DLOK	/If not continue
+	BUN DLDONE
+DLOK:	STA LLNEXT	/Point to the next node
+	BUN LOOPDL
+
+DLDONE:	BUN LLDELT I
+
+
+
 /------Local Variables------
 MCTR:	DEC 0	/Counter for the MUL_SW function
 PRODUC:	HEX 0	/The returned value for the MUL_SW function to be loaded to AC
@@ -151,6 +246,12 @@ BASE16:	HEX 0	/Base for 16 bit exponentiation (from AC)
 EXPO16:	HEX 0	/Exponent for 16 bit exponentiation (from FNC_IN)
 OUT16:	HEX 1	/Output for EXP16
 
+LLTAIL:	HEX B00	/Pointer to the tail of the LL
+LLNEXT:	HEX 0	/Temporary Area to store stuff for the LL
+TRCTR:	HEX 0
+DLCTR:	HEX 0
+DLPTR:	HEX 0	/Second pointer to assist in deletion
+
 
 
 
@@ -160,9 +261,16 @@ ONE:	DEC 1
 NEGONE:	DEC -1
 ZERO:	DEC 0
 
+LLHEAD:	HEX B00	/Pointer to the head of the linked list
+
 
 
 
 /------Inputs------
 FNC_IN:	HEX 0	/The input to the functions used by the library
-	
+
+
+
+
+/------Linked List Memory Space------
+	ORG B00
