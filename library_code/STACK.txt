@@ -1,0 +1,58 @@
+Below is the source code for the Stack functions, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+/------Stack PUSH------
+/Pushes the value in AC to the stack (doesn't do anything if stack is full)
+PUSH:	HEX 0
+	STA STKTMP	/Store our AC in a temp location
+	LDA STKTOP
+	CMA
+	INC
+	ADD STKMAX	/Check if the top of the stack is at the maximum (overflow)
+	SZA
+	BUN OKPUSH
+	BUN PUSHED
+
+OKPUSH:	LDA STKTMP
+	STA STKTOP I	/Store our AC at the value at the top of the stack
+	ISZ STKTOP	/Increment our stacks top pointer
+
+PUSHED:	BUN PUSH I
+
+
+
+
+/------Stack POP------
+/Pops the value in the stack returning it to AC (returns 0 if the stack is empty)
+POP:	HEX 0
+	LDA STKBTM
+	CMA
+	INC
+	ADD STKTOP	/Check if top = bottom
+	SZA		/If were underflowing, just return
+	BUN OKPOP
+	BUN POPPED
+
+OKPOP:	LDA STKTOP	/Subtract 1 from the stack pointer and save it effectively popping
+	ADD NEGONE
+	STA STKTOP
+	LDA STKTOP I	/Load the return value into AC
+
+POPPED:	BUN POP I
+
+
+
+/------Local Variables------
+NEGONE:	DEC -1
+STKTOP:	HEX C00	/Current top of the stack
+STKTMP:	HEX 0	/Temporary variable for the stack
+
+
+
+/------Constants------
+STKBTM:	HEX C00 /Address of the bottom of the stack
+STKMAX:	HEX D00 /Maximum address of the stack (stktop <= this)
+
+
+
+/------Stack Memory Space-----
+	ORG C00

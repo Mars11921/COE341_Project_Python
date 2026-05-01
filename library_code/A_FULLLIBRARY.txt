@@ -227,6 +227,85 @@ DLDONE:	BUN LLDELT I
 
 
 
+
+/------Stack PUSH------
+PUSH:	HEX 0
+	STA STKTMP	/Store our AC in a temp location
+	LDA STKTOP
+	CMA
+	INC
+	ADD STKMAX	/Check if the top of the stack is at the maximum (overflow)
+	SZA
+	BUN OKPUSH
+	BUN PUSHED
+
+OKPUSH:	LDA STKTMP
+	STA STKTOP I	/Store our AC at the value at the top of the stack
+	ISZ STKTOP	/Increment our stacks top pointer
+
+PUSHED:	BUN PUSH I
+
+
+
+
+/------Stack POP------
+POP:	HEX 0
+	LDA STKBTM
+	CMA
+	INC
+	ADD STKTOP	/Check if top = bottom
+	SZA		/If were underflowing, just return
+	BUN OKPOP
+	BUN POPPED
+
+OKPOP:	LDA STKTOP	/Subtract 1 from the stack pointer and save it effectively popping
+	ADD NEGONE
+	STA STKTOP
+	LDA STKTOP I	/Load the return value into AC
+
+POPPED:	BUN POP I
+	
+
+
+
+/------Queue NQUEUE------
+NQUEUE:	HEX 0
+	STA TMPQUE	/Store AC for later
+
+	LDA QUEMAX
+	CMA
+	INC
+	ADD QREAR	/Check rhat were not at the max area
+	SZA
+	BUN OKQUE
+	BUN QDONE
+
+OKQUE:	LDA TMPQUE	/Recover AC to store in the queue
+	STA QREAR I
+	ISZ QREAR
+
+QDONE:	BUN NQUEUE I	/Return
+
+
+
+
+/------Queue DQUEUE------
+DQUEUE: HEX 0
+	LDA QREAR
+	CMA
+	INC
+	ADD QFRONT	/Check were not empty same as stack and enqueue
+	SZA
+	BUN OKDQUE
+	BUN DQDONE
+	
+OKDQUE:	LDA QFRONT I	/Load the value were dequeuing
+	ISZ QFRONT
+
+DQDONE:	BUN DQUEUE I	/Return
+	
+
+
 /------Local Variables------
 MCTR:	DEC 0	/Counter for the MUL_SW function
 PRODUC:	HEX 0	/The returned value for the MUL_SW function to be loaded to AC
@@ -252,6 +331,13 @@ TRCTR:	HEX 0
 DLCTR:	HEX 0
 DLPTR:	HEX 0	/Second pointer to assist in deletion
 
+STKTOP:	HEX C00	/Current top of the stack
+STKTMP:	HEX 0	/Temporary variable for the stack
+
+TMPQUE:	HEX 0	/Temporary variable for the queue
+QREAR:	HEX D00	/Pointer to the rear of the queue
+QFRONT:	HEX D00	/Pointer to the front of the queue
+
 
 
 
@@ -262,6 +348,10 @@ NEGONE:	DEC -1
 ZERO:	DEC 0
 
 LLHEAD:	HEX B00	/Pointer to the head of the linked list
+STKBTM:	HEX C00 /Address of the bottom of the stack
+STKMAX:	HEX D00 /Maximum address of the stack (stktop <= this)
+
+QUEMAX:	HEX E00	/Max address of the queue
 
 
 
@@ -274,3 +364,7 @@ FNC_IN:	HEX 0	/The input to the functions used by the library
 
 /------Linked List Memory Space------
 	ORG B00
+/------Stack Memory Space------
+	ORG C00
+/------Queue Memory Space------
+	ORG D00

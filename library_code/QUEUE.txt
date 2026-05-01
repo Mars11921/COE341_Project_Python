@@ -1,0 +1,59 @@
+Below is the source code for the Queue functions, it is included in the 'A_FULLLIBRARY.txt' file. Copy that at the end of your program to include the library
+
+/------Queue NQUEUE------
+/Enqueues the value in AC
+NQUEUE:	HEX 0
+	STA TMPQUE	/Store AC for later
+
+	LDA QUEMAX
+	CMA
+	INC
+	ADD QREAR	/Check rhat were not at the max area
+	SZA
+	BUN OKQUE
+	BUN QDONE
+
+OKQUE:	LDA TMPQUE	/Recover AC to store in the queue
+	STA QREAR I
+	ISZ QREAR
+
+QDONE:	BUN NQUEUE I	/Return
+
+
+
+
+/------Queue DQUEUE------
+/Dequeues and returns the value in AC
+DQUEUE: HEX 0
+	LDA QREAR
+	CMA
+	INC
+	ADD QFRONT	/Check were not empty same as stack and enqueue
+	SZA
+	BUN OKDQUE
+	BUN DQDONE
+	
+OKDQUE:	LDA QFRONT I	/Load the value were dequeuing
+	ISZ QFRONT
+
+DQDONE:	BUN DQUEUE I	/Return
+
+
+
+
+/------Local Variables------
+TMPQUE:	HEX 0	/Temporary variable for the queue
+QREAR:	HEX D00	/Pointer to the rear of the queue
+QFRONT:	HEX D00	/Pointer to the front of the queue
+
+
+
+
+/------Constants------
+QUEMAX:	HEX E00	/Max address of the queue
+
+
+
+
+/------Queue Memory Space------
+	ORG D00
