@@ -368,3 +368,51 @@ FNC_IN:	HEX 0	/The input to the functions used by the library
 	ORG C00
 /------Queue Memory Space------
 	ORG D00
+
+
+/------Section 4.6------
+DIV_FP: HEX 0           / Return Address
+        STA DF_VAL      / Store original dividend
+        
+        /--- Step 1: Scale Up (Shift Left) ---
+        LDA SCALE_N     / Load negative scaling factor (e.g., -8)
+        STA DF_CTR
+S_UP:   LDA DF_VAL
+        CLE
+        CIL             / Arithmetic shift left 
+        STA DF_VAL
+        ISZ DF_CTR      / Repeat for SCALE_N times
+        BUN S_UP
+        
+        /--- Step 2: Perform Computation ---
+        LDA DF_VAL
+        BSA DIV_SW      / Call integer division
+        STA DF_RES      / Result is now scaled by 2^N
+        
+        /--- Step 3: Rounding ---
+        / To round, we check the remainder. If Remainder * 2 >= Divisor, increment result.
+        LDA DIV_REM     / Remainder from DIV_SW
+        CLE
+        CIL             / Multiply remainder by 2
+        CMA
+        INC             / Negative (Rem * 2)
+        ADD FNC_IN      / Compare with divisor
+        SPA             / If Divisor - (Rem * 2) is positive, skip rounding
+        BUN S_DOWN_PREP
+        LDA DF_RES
+        INC             / Apply rounding 
+        STA DF_RES
+
+        /--- Step 4: Scale Down (Optional/Contextual) ---
+        / NOTE: Often you keep the result scaled for further math.
+        / To scale back, you would perform CIR N times.
+S_DOWN_PREP:
+        LDA DF_RES
+        BUN DIV_FP I
+
+/--- Parameters and Variables ---
+SCALE_N: DEC -8         / Scaling factor parameter (2^8 = 256)
+DF_VAL:  HEX 0          / Temporary dividend
+DF_CTR:  HEX 0          / Shift counter
+DF_RES:  HEX 0          / Intermediate result
+DIV_REM: HEX 0          / Remainder (must be saved by your DIV_SW)
