@@ -371,44 +371,32 @@ FNC_IN:	HEX 0	/The input to the functions used by the library
 
 
 /------Section 4.6------
-DIV_FP: HEX 0           / Return Address
-        STA DF_VAL      / Store original dividend
-        
-        /--- Step 1: Scale Up (Shift Left) ---
-        LDA SCALE_N     / Load negative scaling factor (e.g., -8)
-        STA DF_CTR
-S_UP:   LDA DF_VAL
-        CLE
-        CIL             / Arithmetic shift left 
-        STA DF_VAL
-        ISZ DF_CTR      / Repeat for SCALE_N times
+DIV_FP: HEX 0           / Return address.
+        STA DF_VAL      / Store the original dividend passed in AC.
+        LDA SCALE_N     / Load the negative scaling factor (e.g., -8).
+        STA DF_CTR      / Set up shift counter.
+S_UP:   LDA DF_VAL      / Load dividend.
+        CLE             / Clear E bit to ensure a 0 is shifted in.
+        CIL             / Circular Left Shift (effectively AC = AC * 2).
+        STA DF_VAL      / Save doubled value.
+        ISZ DF_CTR      / Repeat N times.
         BUN S_UP
-        
-        /--- Step 2: Perform Computation ---
-        LDA DF_VAL
-        BSA DIV_SW      / Call integer division
-        STA DF_RES      / Result is now scaled by 2^N
-        
-        /--- Step 3: Rounding ---
-        / To round, we check the remainder. If Remainder * 2 >= Divisor, increment result.
-        LDA DIV_REM     / Remainder from DIV_SW
-        CLE
-        CIL             / Multiply remainder by 2
-        CMA
-        INC             / Negative (Rem * 2)
-        ADD FNC_IN      / Compare with divisor
-        SPA             / If Divisor - (Rem * 2) is positive, skip rounding
-        BUN S_DOWN_PREP
-        LDA DF_RES
-        INC             / Apply rounding 
+        LDA DF_VAL      / Load the now-scaled dividend.
+        BSA DIV_SW      / Perform standard integer division.
+        STA DF_RES      / Store the result.
+        LDA DIV1        / Load the remainder left over by DIV_SW.
+        CLE             / Prepare to multiply remainder by 2.
+        CIL             / AC = Remainder * 2.
+        CMA             / Negate (Rem*2).
+        INC
+        ADD FNC_IN      / Compare: Divisor - (Remainder * 2).
+        SPA             / If result is positive, Rem*2 < Divisor (No rounding).
+        BUN DF_DONE     / Finish if no rounding needed.
+        LDA DF_RES      / Otherwise, round up.
+        INC             / Increment the quotient.
         STA DF_RES
-
-        /--- Step 4: Scale Down (Optional/Contextual) ---
-        / NOTE: Often you keep the result scaled for further math.
-        / To scale back, you would perform CIR N times.
-S_DOWN_PREP:
-        LDA DF_RES
-        BUN DIV_FP I
+DF_DONE:LDA DF_RES      / Load final result to AC.
+        BUN DIV_FP I    / Return.
 
 /--- Parameters and Variables ---
 SCALE_N: DEC -8         / Scaling factor parameter (2^8 = 256)
@@ -422,108 +410,104 @@ DIV_REM: HEX 0          / Remainder (must be saved by your DIV_SW)
 
 /------Section 4.7------
 /------Closest Element Function------
-CLOSEST: HEX 0           / Return Address
-         LDA MAX_HEX     / Initialize min_diff with 7FFF
+CLOSEST: HEX 0           / Return Address.
+         LDA MAX_VAL     / Initialize min_diff with a very large number (7FFF).
          STA MIN_DIFF
          CLA
-         STA BEST_IDX
-         STA CURR_IDX
-         LDA L_SIZE
+         STA BEST_IDX    / Store index of the best match found so far.
+         STA CUR_IDX     / Current index we are inspecting.
+         LDA L_SIZE      / Setup negative loop counter.
          CMA
          INC
-         STA L_CTR       / Negative counter
-C_LOOP:  LDA L_PTR I
+         STA L_CTR
+C_LOOP:  LDA L_PTR I     / Load array element A[i].
          CMA
+         INC             / -A[i].
+         ADD FNC_IN      / AC = TargetValue - A[i].
+         SPA             / If result is negative, convert to absolute value.
+         BUN C_ABS
+         BUN C_CHECK
+C_ABS:   CMA             / Two's complement for absolute difference.
          INC
-         ADD FNC_IN      / AC = T - A[i]
-         SPA             / If negative, skip to absolute conversion
-         BUN C_COMP
-         CMA             / Convert to Absolute Value
-         INC
-C_COMP:  STA AC_TMP      / Current Difference
-         LDA MIN_DIFF
+C_CHECK: STA AC_TMP      / This is current distance |Target - A[i]|.
          CMA
+         INC             / -(current distance).
+         ADD MIN_DIFF    / Compare: MinDiff - CurrentDistance.
+         SPA             / If positive, MinDiff > CurrentDistance (New closer match!).
+         BUN C_NEXT      / If negative, skip; current element is further away.
+         LDA AC_TMP      / Load new smaller distance.
+         STA MIN_DIFF    / Update minimum distance record.
+         LDA CUR_IDX     / Load current position.
+         STA BEST_IDX    / Update best index record.
+C_NEXT:  ISZ L_PTR       / Point to next element.
+         LDA CUR_IDX
          INC
-         ADD AC_TMP      / AC = CurrDiff - MinDiff
-         SPA             / If CurrDiff >= MinDiff, skip update
-         BUN C_NEXT
-         LDA AC_TMP      / New Min found
-         STA MIN_DIFF
-         LDA CURR_IDX
-         STA BEST_IDX
-C_NEXT:  ISZ L_PTR
-         LDA CURR_IDX
-         INC
-         STA CURR_IDX
-         ISZ L_CTR
+         STA CUR_IDX     / Increment index tracker.
+         ISZ L_CTR       / Loop control.
          BUN C_LOOP
-         LDA BEST_IDX    / Return index of closest element
-         BUN CLOSEST I
+         LDA BEST_IDX    / Load the index of the closest element into AC.
+         BUN CLOSEST I   / Return.
 
 
 /------Word Search Function------
-W_SEARCH: HEX 0
-          CLA
-          STA W_CNT
-          STA W_IDX
-          LDA L_SIZE
-          CMA
-          INC
-          STA L_CTR
-W_LOOP:   LDA L_PTR I
-          CMA
-          INC
-          ADD FNC_IN     / Compare Target and Word
-          SZA            / If AC != 0, no match
-          BUN W_NEXT
-          LDA W_IDX      / Match found!
-          STA L_PTR2 I   / Store index in results memory
-          ISZ L_PTR2
-          ISZ W_CNT      / Increment match count
-W_NEXT:   ISZ L_PTR
-          LDA W_IDX
-          INC
-          STA W_IDX
-          ISZ L_CTR
-          BUN W_LOOP
-          LDA W_CNT      / Return total count
-          BUN W_SEARCH I
+W_SEARCH: HEX 0         / Return address.
+        CLA             / Clear AC.
+        STA AC_TMP      / This will be our match counter.
+        STA CURR_IDX    / Tracks which index (0, 1, 2...) we are currently at.
+        LDA L_SIZE      / Standard negative loop counter setup.
+        CMA
+        INC
+        STA L_CTR
+W_LOOP: LDA L_PTR I     / Load word from current sentence position.
+        CMA             / Compare with target word in FNC_IN.
+        INC
+        ADD FNC_IN      / AC = Target - Word.
+        SZA             / If AC is not zero, they are not equal.
+        BUN W_NEXT      / Skip if no match.
+        LDA CURR_IDX    / Match found! Load the current index number.
+        STA L_PTR2 I    / Save this index into the results memory array.
+        ISZ L_PTR2      / Move the result pointer forward for the next match.
+        ISZ AC_TMP      / Increment the total match count.
+W_NEXT: ISZ L_PTR       / Move sentence pointer to next word.
+        ISZ CURR_IDX    / Increment index counter.
+        ISZ L_CTR       / Loop check.
+        BUN W_LOOP
+        LDA AC_TMP      / Load total count into AC.
+        BUN W_SEARCH I  / Return.
 
 
 /------Bubble Sort Function------
-B_SORT:   HEX 0
-          LDA L_SIZE
-          ADD NEGONE
-          STA B_OUT_CTR  / Outer loop: i = size - 1 down to 1
-B_OUT:    LDA B_OUT_CTR
-          SZA
-          BUN B_IN_PREP
-          BUN B_DONE
-B_IN_PREP:STA B_IN_CTR
-          LDA L_PTR
-          STA B_PTR      / Reset pointer to array start
-B_IN:     LDA B_PTR I
-          STA B_VAL1     / Current element
-          ISZ B_PTR
-          LDA B_PTR I
-          STA B_VAL2     / Next element
-          CMA
-          INC
-          ADD B_VAL1     / AC = B_VAL1 - B_VAL2
-          SPA            / If B_VAL1 <= B_VAL2, skip swap
-          BUN B_SWAP
-          BUN B_SKIP
-B_SWAP:   LDA B_VAL1     / Swap elements in memory
-          STA B_PTR I
-          LDA B_PTR
-          ADD NEGONE
-          STA AC_TMP
-          LDA B_VAL2
-          STA AC_TMP I
-B_SKIP:   ISZ B_IN_CTR   / Wait: Logic fix for negative counter
-          / (In Mano, ISZ is used for negative loop counters)
-          / Assumes B_IN_CTR was initialized as negative
-          BUN B_IN
-          ISZ B_OUT_CTR
-          BUN B_OUT
-B_DONE:   BUN B_SORT I
+B_SORT: HEX 0           / Return address.
+        LDA L_SIZE      / Setup outer loop counter.
+        CMA
+        INC
+        STA O_CTR       / Outer counter (Passes through the array).
+O_LOOP: LDA L_PTR       / Reset the inner pointer to the start of the array.
+        STA I_PTR
+        LDA L_SIZE      / Setup inner loop counter.
+        CMA
+        INC
+        STA I_CTR
+I_LOOP: LDA I_PTR I     / Load current element (A).
+        STA VAL_A       / Save A.
+        ISZ I_PTR       / Point to next element (B).
+        LDA I_PTR I     / Load element B.
+        STA VAL_B       / Save B.
+        CMA             / Prepare to subtract: A - B.
+        INC
+        ADD VAL_A       / If A > B, AC will be positive.
+        SPA             / If AC is positive, A > B, so we must SWAP.
+        BUN SWAP
+        BUN I_NEXT      / Otherwise, they are in order, skip swap.
+SWAP:   LDA I_PTR       / Backtrack to find address of Element A.
+        ADD NEGONE      / I_PTR - 1.
+        STA ADR_TMP     / Save A's address.
+        LDA VAL_B       / Take B's value.
+        STA ADR_TMP I   / Write it into A's original memory slot.
+        LDA VAL_A       / Take A's value.
+        STA I_PTR I     / Write it into B's memory slot.
+I_NEXT: ISZ I_CTR       / Finish inner pass.
+        BUN I_LOOP
+        ISZ O_CTR       / Finish outer pass.
+        BUN O_LOOP
+        BUN B_SORT I    / Array is now sorted!
